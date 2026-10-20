@@ -115,7 +115,7 @@ const ENGLISH = [
 const PEOPLE = {
   sagiv: { name: 'Sagiv', topic: 'teleport-sagiv-f0da169d019c', lines: ENGLISH },
   her: {
-    name: 'My love',
+    name: 'שחר',
     topic: 'teleport-her-b8d7f0162729',
     lines: [
       'שחריקה אני אוהב אותך ואני מתגעגע אלייך',
@@ -294,10 +294,15 @@ async function teleport(me, them) {
   const back = `${location.origin}${location.pathname}?me=${them}&from=${me}&art=${artIndex}&msg=${encodeURIComponent(sent)}`;
   $('go').disabled = true;
   $('status').textContent = 'teleporting...';
-  const send = fetch(`https://ntfy.sh/${PEOPLE[them].topic}`, {
+  const send = fetch('https://ntfy.sh/', {
     method: 'POST',
-    body: sent,
-    headers: { Title: `${PEOPLE[me].name} teleported to you!`, Tags: 'sparkling_heart', Click: back },
+    body: JSON.stringify({
+      topic: PEOPLE[them].topic,
+      title: `${PEOPLE[me].name} teleported to you!`,
+      message: sent,
+      tags: ['sparkling_heart'],
+      click: back,
+    }),
   }).then(res => { if (!res.ok) throw new Error(res.status); });
   try {
     await Promise.all([send, warp()]);
