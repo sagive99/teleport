@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1b1033">
+<title>Teleport</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 24px 16px;
+    background: radial-gradient(circle at 50% 30%, #3b1d6e, #1b1033 70%);
+    color: #fff3fb;
+    font-family: "Courier New", monospace;
+    text-align: center;
+  }
+  h1 { font-size: 22px; margin: 0; letter-spacing: 1px; }
+  p { margin: 0; font-size: 18px; line-height: 1.4; max-width: 320px; }
+  button {
+    font: inherit;
+    font-size: 20px;
+    font-weight: bold;
+    color: #1b1033;
+    background: #ff8fc7;
+    border: none;
+    padding: 18px 28px;
+    box-shadow: 0 6px 0 #b8457f;
+    cursor: pointer;
+  }
+  button:active { transform: translateY(4px); box-shadow: 0 2px 0 #b8457f; }
+  button:disabled { opacity: .6; }
+  .small { font-size: 14px; opacity: .7; }
+  .stage { position: relative; }
+  canvas { image-rendering: pixelated; width: 288px; height: auto; }
+  #heart { position: absolute; left: 50%; top: -8px; width: 54px; margin-left: -27px; animation: bob 1.2s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-10px) scale(1.1); } }
+  .flash { animation: flash .9s ease-out; }
+  @keyframes flash { 0% { filter: brightness(6); transform: scale(.2); } 100% { filter: none; transform: none; } }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<section id="pick" hidden>
+  <h1>Who are you?</h1>
+  <p id="pickButtons" style="display:flex;gap:12px;margin-top:20px"></p>
+</section>
+
+<section id="home" hidden>
+  <h1 id="homeTitle"></h1>
+  <p style="margin:20px auto"><button id="go"></button></p>
+  <p class="small" id="status"></p>
+</section>
+
+<section id="scene" hidden>
+  <div class="stage">
+    <canvas id="heart" width="7" height="6"></canvas>
+    <canvas id="art" width="32" height="20"></canvas>
+  </div>
+  <h1 id="sceneTitle" style="margin:20px 0 12px"></h1>
+  <p id="sceneMsg"></p>
+  <p class="small" style="margin-top:20px"><a href="" id="back" style="color:inherit">teleport again</a></p>
+</section>
+
+<script>
+const PEOPLE = {
+  sagiv: { name: 'Sagiv', topic: 'teleport-sagiv-f0da169d019c' },
+  her: { name: 'My love', topic: 'teleport-her-b8d7f0162729' },
+};
+
+const MESSAGES = [
+  'hi! i love you and miss you',
+  'poof! here for a hug',
+  'just wanted to be next to you for a sec',
+  'you are my favorite place to teleport to',
+  'counting the days until it is not pretend',
+];
+
+const PALETTE = {
+  H: '#3a2418', S: '#f2c6a0', E: '#1b1033', M: '#c4506a', W: '#f59ab0',
+  B: '#4a7bd1', P: '#2d3a5c', K: '#222222', L: '#7a3f1d', D: '#e05c9a', R: '#ff4d8d',
+};
+
+const HIM = [
+  '....HHHH....',
+  '...HHHHHH...',
+  '..HHHHHHHH..',
+  '..HSSSSSSH..',
+  '..SSESSESS..',
+  '..SSSSSSSS..',
+  '..SSSMMSSS..',
+  '...SSSSSS...',
+  '....SSSS....',
+  '..BBBBBBBB..',
+  '.BBBBBBBBBB.',
+  '.SBBBBBBBBS.',
+  '.SBBBBBBBBS.',
+  '..BBBBBBBB..',
+  '..PPP..PPP..',
+  '..PPP..PPP..',
+  '..KKK..KKK..',
+];
+
+const HER = [
+  '....LLLL....',
+  '..LLLLLLLL..',
+  '.LLLLLLLLLL.',
+  '.LLSSSSSSLL.',
+  '.LSSESSESSL.',
+  '.LSWSSSSWSL.',
+  '.LSSSMMSSSL.',
+  '.LLSSSSSSLL.',
+  '.LL.SSSS.LL.',
+  '.LDDDDDDDDL.',
+  '.DDDDDDDDDD.',
+  '.SDDDDDDDDS.',
+  '.SDDDDDDDDS.',
+  '.DDDDDDDDDD.',
+  'DDDDDDDDDDDD',
+  '...SS..SS...',
+  '...KK..KK...',
+];
+
+const HEART = [
+  '.RR.RR.',
+  'RRRRRRR',
+  'RRRRRRR',
+  '.RRRRR.',
+  '..RRR..',
+  '...R...',
+];
+
+function draw(canvas, sprite, x, y) {
+  const ctx = canvas.getContext('2d');
+  sprite.forEach((row, dy) => [...row].forEach((c, dx) => {
+    if (c === '.') return;
+    ctx.fillStyle = PALETTE[c];
+    ctx.fillRect(x + dx, y + dy, 1, 1);
+  }));
+}
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+
+function showScene(title, msg) {
+  $('home').hidden = true;
+  $('scene').hidden = false;
+  $('sceneTitle').textContent = title;
+  $('sceneMsg').textContent = msg;
+  const art = $('art');
+  art.getContext('2d').clearRect(0, 0, art.width, art.height);
+  draw(art, HIM, 3, 3);
+  draw(art, HER, 17, 3);
+  draw($('heart'), HEART, 0, 0);
+  art.parentElement.classList.remove('flash');
+  void art.offsetWidth;
+  art.parentElement.classList.add('flash');
+}
+
+async function teleport(me, them) {
+  const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+  const back = `${location.origin}${location.pathname}?me=${them}&from=${me}&msg=${encodeURIComponent(msg)}`;
+  $('go').disabled = true;
+  $('status').textContent = 'teleporting...';
+  try {
+    const res = await fetch(`https://ntfy.sh/${PEOPLE[them].topic}`, {
+      method: 'POST',
+      body: msg,
+      headers: { Title: `${PEOPLE[me].name} teleported to you!`, Tags: 'sparkling_heart', Click: back },
+    });
+    if (!res.ok) throw new Error(res.status);
+    showScene(`You teleported to ${PEOPLE[them].name}!`, msg);
+  } catch (e) {
+    $('status').textContent = 'teleporter broke :( check your internet and try again';
+  } finally {
+    $('go').disabled = false;
+  }
+}
+
+function start(me) {
+  try { localStorage.setItem('me', me); } catch {}
+  const them = Object.keys(PEOPLE).find(k => k !== me);
+  $('pick').hidden = true;
+  $('back').href = `?me=${me}`;
+  if (params.has('from') && PEOPLE[params.get('from')]) {
+    showScene(`${PEOPLE[params.get('from')].name} teleported to you!`, params.get('msg') || MESSAGES[0]);
+    return;
+  }
+  $('home').hidden = false;
+  $('homeTitle').textContent = `Hi ${PEOPLE[me].name}`;
+  $('go').textContent = `Teleport to ${PEOPLE[them].name}`;
+  $('go').onclick = () => teleport(me, them);
+}
+
+let saved = null;
+try { saved = localStorage.getItem('me'); } catch {}
+const me = [params.get('me'), saved].find(k => PEOPLE[k]);
+if (me) {
+  start(me);
+} else {
+  $('pick').hidden = false;
+  for (const key of Object.keys(PEOPLE)) {
+    const b = document.createElement('button');
+    b.textContent = PEOPLE[key].name;
+    b.onclick = () => start(key);
+    $('pickButtons').append(b);
+  }
+}
+</script>
+</body>
+</html>
