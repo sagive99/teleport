@@ -41,7 +41,8 @@
   @keyframes glow { 50% { box-shadow: 0 6px 0 #b8457f, 0 0 28px #ff8fc7; } }
   .small { font-size: 14px; opacity: .7; }
   .stage { position: relative; display: inline-block; }
-  #art, #photo { image-rendering: pixelated; width: 288px; max-width: 80vw; height: auto; display: block; }
+  #art, #photo { image-rendering: pixelated; width: 320px; max-width: 86vw; height: auto; display: block; }
+  #photo { border: 4px solid #ff8fc7; box-shadow: 0 0 30px #ff8fc777; }
   #heart { position: absolute; left: 50%; top: -18px; width: 54px; margin-left: -27px; image-rendering: pixelated; animation: bob 1.2s ease-in-out infinite; z-index: 1; }
   @keyframes bob { 50% { transform: translateY(-10px) scale(1.1); } }
   .materialize { animation: materialize 1.1s steps(14) both; }
@@ -126,7 +127,7 @@ const PEOPLE = {
   },
 };
 
-const ART = [];
+const ART = Array.from({ length: 9 }, (_, i) => `art/${i + 1}.jpg`);
 
 const PALETTE = {
   H: '#3a2418', S: '#f2c6a0', E: '#1b1033', M: '#c4506a', W: '#f59ab0',
@@ -291,6 +292,7 @@ function showScene(title, msg, artIndex) {
 async function teleport(me, them) {
   const sent = pickLine(PEOPLE[them].lines);
   const artIndex = nextArt();
+  new Image().src = ART[artIndex];
   const back = `${location.origin}${location.pathname}?me=${them}&from=${me}&art=${artIndex}&msg=${encodeURIComponent(sent)}`;
   $('go').disabled = true;
   $('status').textContent = 'teleporting...';
@@ -322,9 +324,11 @@ async function start(me) {
   $('back').href = `?me=${me}`;
   const from = params.get('from');
   if (PEOPLE[from]) {
+    const artIndex = (Number(params.get('art')) || 0) % ART.length;
+    new Image().src = ART[artIndex];
     warp();
     await wait(800);
-    showScene(`${PEOPLE[from].name} teleported to you!`, params.get('msg') || pickLine(PEOPLE[me].lines), Number(params.get('art')) || 0);
+    showScene(`${PEOPLE[from].name} teleported to you!`, params.get('msg') || pickLine(PEOPLE[me].lines), artIndex);
     return;
   }
   $('home').hidden = false;
